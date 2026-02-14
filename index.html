@@ -651,17 +651,23 @@
         #big-heart-container {
             text-align: center;
             cursor: pointer;
+            position: relative;
+            z-index: 50;
         }
 
         #big-heart {
             width: 350px;
             margin: 0 auto;
+            filter: drop-shadow(0 0 30px rgba(255, 0, 80, 0.7));
         }
 
         #heart-path {
             stroke-dasharray: 600;
             stroke-dashoffset: 600;
             animation: drawHeart 3s ease forwards;
+            fill: #ff004c;
+            fill-opacity: 0;
+            transition: fill-opacity 1s ease;
         }
 
         @keyframes drawHeart {
@@ -670,7 +676,6 @@
             }
         }
 
-        /* Latido */
         #big-heart.beating {
             animation: heartbeatBig 1s infinite;
         }
@@ -683,35 +688,80 @@
             }
 
             50% {
-                transform: scale(1.1);
+                transform: scale(1.15);
             }
         }
 
-        /* Corazones pequeños que caen */
-        .small-heart {
-            position: fixed;
-            font-size: 20px;
-            animation: fallSlow 6s linear forwards;
-            pointer-events: none;
+        /* FLECHA REAL ANIMADA */
+        #arrow-line,
+        #arrow-head {
+            transform: translateX(-400px);
+            opacity: 1;
         }
 
-        @keyframes fallSlow {
+        #big-heart-container.shot #arrow-line,
+        #big-heart-container.shot #arrow-head {
+            animation: shootArrow 1s ease-out forwards;
+        }
+
+        @keyframes shootArrow {
             0% {
-                transform: translateY(-50px);
+                transform: translateX(-400px);
+            }
+
+            80% {
+                transform: translateX(10px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        /* EXPLOSIÓN REAL DESDE CENTRO */
+        .explosion-heart {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 9999;
+            animation: explodeAnim 1.8s ease-out forwards;
+        }
+
+        @keyframes explodeAnim {
+            0% {
+                transform: translate(0, 0) scale(1);
                 opacity: 1;
             }
 
             100% {
-                transform: translateY(110vh);
-                opacity: 0.7;
+                transform: translate(var(--x), var(--y)) scale(1.8);
+                opacity: 0;
             }
         }
 
-        #click-heart-text {
-            margin-top: 20px;
-            font-style: italic;
-            color: #d81b60;
-            animation: pulseAnim 2s infinite;
+        /* TEXTO FINAL */
+        #final-title {
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 40px;
+            display: none;
+            animation: heartbeat 1.5s infinite;
+            background: linear-gradient(45deg, red, purple);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: heartbeat 1.5s infinite, gradientMove 5s infinite alternate;
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            100% {
+                background-position: 100% 50%;
+            }
         }
     </style>
 </head>
@@ -1074,21 +1124,22 @@
 
             const heartPath = document.getElementById('heart-path');
             const bigHeart = document.getElementById('big-heart');
-            const arrowLine = document.getElementById('arrow-line');
-            const arrowHead = document.getElementById('arrow-head');
             const container = document.getElementById('big-heart-container');
 
-            // Esperar a que termine de dibujarse el corazón
+            // Después de dibujarse el corazón
             setTimeout(() => {
+
+                // Rellenar corazón
+                heartPath.style.fillOpacity = 1;
+
+                // Activar latido
                 bigHeart.classList.add('beating');
 
-                // Mostrar flecha atravesando
-                arrowLine.style.opacity = 1;
-                arrowHead.style.opacity = 1;
+                // Disparar flecha
+                container.classList.add('shot');
 
             }, 3000);
 
-            // Evento click para explosión
             container.addEventListener('click', explodeHeart);
         }
 
@@ -1099,30 +1150,36 @@
 
             container.style.display = 'none';
 
-            // Crear muchos corazones pequeños
-            for (let i = 0; i < 80; i++) {
-                setTimeout(() => {
-                    const heart = document.createElement('div');
-                    heart.className = 'small-heart';
-                    heart.innerHTML = '💖';
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
 
-                    heart.style.left = Math.random() * 100 + 'vw';
-                    heart.style.fontSize = (15 + Math.random() * 25) + 'px';
-                    heart.style.animationDuration = (5 + Math.random() * 5) + 's';
+            for (let i = 0; i < 150; i++) {
 
-                    document.body.appendChild(heart);
+                const heart = document.createElement('div');
+                heart.className = 'explosion-heart';
+                heart.innerHTML = '💖';
 
-                    setTimeout(() => heart.remove(), 8000);
-                }, i * 50);
+                heart.style.left = centerX + 'px';
+                heart.style.top = centerY + 'px';
+
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 300 + Math.random() * 400;
+
+                const x = Math.cos(angle) * distance + 'px';
+                const y = Math.sin(angle) * distance + 'px';
+
+                heart.style.setProperty('--x', x);
+                heart.style.setProperty('--y', y);
+
+                document.body.appendChild(heart);
+
+                setTimeout(() => heart.remove(), 2000);
             }
 
-            // Mostrar mensaje final después de la explosión
             setTimeout(() => {
                 finalTitle.style.display = 'block';
-                finalTitle.style.animation = 'heartbeat 1.5s infinite';
-            }, 2000);
+            }, 800);
         }
-
 
 
         function nextChapter() {
